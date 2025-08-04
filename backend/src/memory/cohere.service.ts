@@ -6,7 +6,7 @@ export class CohereService {
     private readonly API_KEY = process.env.COHERE_API_KEY;
     /* Cohere REST endpoints */
     private readonly EMBED_ENDPOINT = 'https://api.cohere.ai/v1/embed';
-    private readonly GENERATE_ENDPOINT = 'https://api.cohere.ai/v1/generate';
+    private readonly GENERATE_ENDPOINT = 'https://api.cohere.ai/v1/chat';
 
     async getEmbedding(text: string): Promise<number[]> {
         try {
@@ -40,21 +40,29 @@ export class CohereService {
     }
 
     async generateText(prompt: string): Promise<string> {
-        const response = await axios.post(
-            this.GENERATE_ENDPOINT,
-            {
-                prompt: prompt,
-                model: 'command-xlarge-nightly',
-                max_tokens: 300,
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${this.API_KEY}`,
-                    'Content-Type': 'application/json',
+        try {
+            const response = await axios.post(
+                this.GENERATE_ENDPOINT,
+                {
+                    message: prompt,
+                    model: 'command-xlarge-nightly',
+                    max_tokens: 300,
+                    // Add any additional parameters you need
+                    temperature: 0.7,
+                    preamble: "You are a helpful AI assistant",
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.API_KEY}`,
+                        'Content-Type': 'application/json',
+                    }
                 }
-            }
-        );
+            );
 
-        return response.data.text;
+            return response.data.text || response.data.message;
+        } catch (error) {
+            console.error('Cohere API Error:', error.response?.data || error.message);
+            throw new Error('Failed to generate response from Cohere');
+        }
     }
 }

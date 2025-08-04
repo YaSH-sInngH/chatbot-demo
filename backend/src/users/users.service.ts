@@ -34,24 +34,27 @@ export class UsersService {
     });
   }
 
-  async getRecentMessages(userId: string, limit = 5): Promise<{ prompt: string; response: string }[]> {
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-      relations: ['chats'],
-      order: { chats: { createdAt: 'DESC' } },
+  async getRecentMessages(userId: string, conversationId?: string, limit: number = 10): Promise<{ prompt: string; response: string }[]> {
+    const chats = await this.chatsRepository.find({
+      where: {
+        user: { id: userId },
+        ...(conversationId && { conversationId })
+      },
+      order: { createdAt: 'DESC' },
+      take: limit,
     });
 
-    return user?.chats?.slice(0, limit).map(chat => ({
+    return chats.map(chat => ({
       prompt: chat.prompt,
       response: chat.response,
-    })) || [];
-  }
+     }));
+   }
 
-  async saveChatHistory(userId: string, prompt: string, response: string): Promise<void> {
+  async saveChatHistory(userId: string, prompt: string, response: string, conversationId?: string): Promise<void> {
     const user = await this.findOne(userId);
     if (!user) throw new Error('User not found');
     
-    const chat = this.chatsRepository.create({ user, prompt, response });
+    const chat = this.chatsRepository.create({ user, prompt, response, conversationId });
     await this.chatsRepository.save(chat);
   }
 }

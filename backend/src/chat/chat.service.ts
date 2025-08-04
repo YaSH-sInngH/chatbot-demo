@@ -12,12 +12,17 @@ export class ChatService {
         private readonly userService: UsersService,
     ) {}
 
-    async chat(userId: string, message: string): Promise<string> {
+    async chat(userId: string, message: string, conversationId?: string): Promise<string> {
         try {
             console.log('Request received:', { userId, message });
 
             // Define userPrompt from the input message
             const userPrompt = message;
+
+            let currentConversationId = conversationId;
+            if (!currentConversationId) {
+                currentConversationId = `${userId}-${Date.now()}`;
+            }
 
             // Get embedding for the user prompt
             const embedding = await Promise.race([
@@ -28,7 +33,7 @@ export class ChatService {
             ]) as number[];
 
             // Query similar embeddings from the vector store
-            const results = await this.vectorStore.querySimilar(embedding)
+            const results = await this.vectorStore.querySimilar(embedding, 5, { userId })
               .catch((err) => {
                 console.error('VectorStore querySimilar error:', err);
                 return [] as string[];
@@ -53,15 +58,23 @@ export class ChatService {
 
             // Prepare the document for storage
             const doc = `User: ${userPrompt}\nAssistant: ${llmResponse}`;
-            await this.vectorStore.addDocument(`chat-${Date.now()}`, embedding, { userId }, 
-              `User: ${message}\nAssistant: ${llmResponse}`),
-            this.userService.saveChatHistory(userId, message, llmResponse)
-            .catch(err => console.error('Storage failed:', err));
+            await Promise.all([
+            this.vectorStore.addDocument(
+                `chat-${Date.now()}`,
+                embedding, 
+                { userId }, 
+                `User: ${message}\nAssistant: ${llmResponse}`
+            ),
+            this.userService.saveChatHistory(userId, message, llmResponse, currentConversationId)
+        ]);
 
             return llmResponse;
         } catch (error) {
-            console.error('Error in ChatService:', error);
-            throw new Error('Failed to process your message');
+            console.error('Detailed ChatService error:', {
+            error: error.response?.data || error.message,
+            stack: error.stack
+        });
+        throw new Error('Failed to process your message');
         }
     }
 

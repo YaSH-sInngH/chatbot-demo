@@ -6,6 +6,9 @@ export class Chat{
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    @Column({ nullable: true })
+    conversationId: string;
+
     @ManyToOne(() => User, (user) => user.chats)
     user: User;
 
