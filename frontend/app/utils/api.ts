@@ -1,6 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export async function apiFetch<T = any>(
+export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -18,7 +18,7 @@ export async function apiFetch<T = any>(
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
+    const errorData: any = await res.json().catch(() => ({}));
     console.error(`API Error [${res.status}]`, errorData);
     
     if (res.status === 401) {

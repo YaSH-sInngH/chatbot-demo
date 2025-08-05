@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "../utils/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { clear } from "console";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -33,7 +32,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  
   const [authError, setAuthError] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
@@ -123,15 +122,14 @@ export default function ChatPage() {
       { role: "user", content: msg.prompt },
       { role: "assistant", content: msg.response }
     ]));
-    // Ensure the selected conversation is highlighted
-    setSelectedIndex(conversations.findIndex(c => c.id === conv.id));
+
   };
 
   const startNewChat = () => {
     setCurrentConversationId(null);
     setMessages([]);
     setInput('');
-    setSelectedIndex(null); // Clear selected history item
+
   };
 
   const sendMessage = async () => {
@@ -176,8 +174,12 @@ export default function ChatPage() {
           ];
         }
       });
-    } catch (err: any) {
-      setMessages((prev) => [...prev, { role: "assistant", content: err.message }]);
+    } catch (err) {
+      if (err instanceof Error) {
+        setMessages((prev) => [...prev, { role: "assistant", content: err.message }]);
+      } else {
+        setMessages((prev) => [...prev, { role: "assistant", content: "An unknown error occurred" }]);
+      }
     } finally {
       setLoading(false);
     }

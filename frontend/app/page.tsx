@@ -43,7 +43,7 @@ export default function Home() {
 
           {/* Sign up link */}
           <p className="text-gray-500 pt-4">
-            New here?{' '}
+            New here?&apos; 
             <Link href="/auth/signup" className="text-blue-600 hover:underline font-medium">
               Create an account
             </Link>
