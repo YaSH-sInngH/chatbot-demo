@@ -24,7 +24,7 @@ export class CohereService {
                         Authorization: `Bearer ${this.API_KEY}`,
                         'Content-Type': 'application/json',
                     },
-                    timeout: 5000
+                    timeout: 10000
                 }
             );
 
