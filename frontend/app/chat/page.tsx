@@ -14,6 +14,7 @@ interface ChatHistoryItem {
   prompt: string;
   response: string;
   conversationId?: string;
+  createdAt: string;
 }
 
 interface Conversation {
@@ -62,20 +63,28 @@ export default function ChatPage() {
     const fetchHistory = async () => {
       try {
         const { chats } = await apiFetch<{ chats: ChatHistoryItem[] }>("/chat/history");
-        // Group chats by conversationId
         const groupedConversations: { [key: string]: Conversation } = {};
+
         chats.forEach(chat => {
-          const convId = chat.conversationId || 'default'; // Use a default if conversationId is missing
+          const convId = chat.conversationId || 'default';
           if (!groupedConversations[convId]) {
             groupedConversations[convId] = {
               id: convId,
               title: chat.prompt.slice(0, 30) || 'New Chat',
-              messages: []
+              messages: [],
             };
           }
           groupedConversations[convId].messages.push(chat);
         });
-        setConversations(Object.values(groupedConversations));
+
+        // Sort conversations by the createdAt of their latest message (descending)
+        const sortedConversations = Object.values(groupedConversations).sort((a, b) => {
+          const lastMessageA = a.messages[a.messages.length - 1];
+          const lastMessageB = b.messages[b.messages.length - 1];
+          return new Date(lastMessageB.createdAt).getTime() - new Date(lastMessageA.createdAt).getTime();
+        });
+
+        setConversations(sortedConversations);
       } catch (err) {
         console.error("Failed to load history", err);
       }
@@ -114,6 +123,8 @@ export default function ChatPage() {
       { role: "user", content: msg.prompt },
       { role: "assistant", content: msg.response }
     ]));
+    // Ensure the selected conversation is highlighted
+    setSelectedIndex(conversations.findIndex(c => c.id === conv.id));
   };
 
   const startNewChat = () => {
@@ -150,7 +161,7 @@ export default function ChatPage() {
           const updatedConversations = [...prevConversations];
           updatedConversations[existingConversationIndex] = {
             ...updatedConversations[existingConversationIndex],
-            messages: [...updatedConversations[existingConversationIndex].messages, { prompt: input, response: res.response, conversationId: conversationToUse }]
+            messages: [...updatedConversations[existingConversationIndex].messages, { prompt: input, response: res.response, conversationId: conversationToUse, createdAt: new Date().toISOString() }]
           };
           return updatedConversations;
         } else {
@@ -160,7 +171,7 @@ export default function ChatPage() {
             {
               id: conversationToUse,
               title: input.slice(0, 30) || 'New Chat',
-              messages: [{ prompt: input, response: res.response, conversationId: conversationToUse }]
+              messages: [{ prompt: input, response: res.response, conversationId: conversationToUse, createdAt: new Date().toISOString() }]
             }
           ];
         }

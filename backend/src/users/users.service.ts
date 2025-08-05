@@ -34,7 +34,7 @@ export class UsersService {
     });
   }
 
-  async getRecentMessages(userId: string, conversationId?: string, limit: number = 10): Promise<{ prompt: string; response: string }[]> {
+  async getRecentMessages(userId: string, conversationId?: string, limit: number = 10): Promise<{ prompt: string; response: string; conversationId?: string }[]> {
     const chats = await this.chatsRepository.find({
       where: {
         user: { id: userId },
@@ -47,7 +47,8 @@ export class UsersService {
     return chats.map(chat => ({
       prompt: chat.prompt,
       response: chat.response,
-     }));
+      conversationId: chat.conversationId,
+    }));
    }
 
   async saveChatHistory(userId: string, prompt: string, response: string, conversationId?: string): Promise<void> {
