@@ -5,7 +5,7 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  
+
   const headers = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -14,20 +14,31 @@ export async function apiFetch<T = unknown>(
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
-    credentials: "include" // Important for cookies if using them
+    credentials: "include", // Important for cookies if using them
   });
 
   if (!res.ok) {
-    const errorData: any = await res.json().catch(() => ({}));
+    const errorData: unknown = await res.json().catch(() => ({}));
+
     console.error(`API Error [${res.status}]`, errorData);
-    
+
+    let message = res.statusText;
+
+    if (
+      typeof errorData === "object" &&
+      errorData !== null &&
+      "message" in errorData &&
+      typeof (errorData as { message?: unknown }).message === "string"
+    ) {
+      message = (errorData as { message: string }).message;
+    }
+
     if (res.status === 401) {
       localStorage.removeItem("token");
-      // Let the component handle the redirect
       throw new Error("Session expired. Please login again.");
     }
-    
-    throw new Error(errorData.message || res.statusText);
+
+    throw new Error(message);
   }
 
   return res.json();
