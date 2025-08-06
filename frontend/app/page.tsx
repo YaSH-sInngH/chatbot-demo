@@ -77,7 +77,7 @@ export default function Home() {
               </div>
               <h2>Smart & Creative</h2>
               <p className="text-sm text-gray-300 mt-2">
-                From problem-solving to creative writing, we've got you covered
+                {"From problem-solving to creative writing, we've got you covered"}
               </p>
             </div>
           </div>
